@@ -289,7 +289,8 @@ function render() {
     h('span', { class: `dot ${S.online ? 'live' : ''}` }),
     h('span', { class: 't' }, EVENT.title),
     h('span', { class: 'sp' }),
-    LOCAL && h('span', { class: 'localmode' }, '로컬 테스트'),
+    // replaceChildren은 false를 "false" 글자로 찍는다 — 없을 때는 빈 문자열을 넘긴다
+    LOCAL ? h('span', { class: 'localmode' }, '로컬 테스트') : '',
     S.team && h('span', { class: 'myteam' }, teamOf(S.team.id)?.name) || '');
 
   if (!configured && !LOCAL) { app.replaceChildren(center(h('div', { class: 'err' }, '설정이 비어 있습니다 (js/config.js)'))); return; }
