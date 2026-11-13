@@ -3,7 +3,7 @@ import {
   getAuth, onAuthStateChanged, signInAnonymously
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { EVENT } from './config.js';
-import { app as fbApp, configured, LOCAL, safeWrite, read, watch, onConnection } from './db.js';
+import { app as fbApp, configured, LOCAL, safeWrite, watch, onConnection } from './db.js';
 import { deriveLive, normalizeState, INITIAL_STATE, optionsOf, valueAt, isOx, explanationOf } from './derive.js';
 import { rank, realAnswers, pointsOf } from './score.js';
 import { teamList } from './join.js';
@@ -62,11 +62,8 @@ function revealedQuestions(s = st()) {
 const ranking = s => rank(QUESTIONS, S.answers, TEAM_OBJ,
   Object.fromEntries(revealedQuestions(s).map(q => [q.id, true])));
 
-// ── 로그인(진행자 암호) ───────────────────────────────────
-
-async function isHost() {
-  try { await read('quiz/state'); return true; } catch { return false; }
-}
+// ── 로그인: 익명 로그인만 하고 바로 진행자 화면 (진행자 암호 없음) ──────
+// 규칙은 "익명 로그인한 브라우저"에게 진행 데이터 쓰기를 허용한다. host.html 주소를 아는 사람은 진행할 수 있다.
 
 function startAuth() {
   const auth = getAuth(fbApp);
@@ -83,27 +80,8 @@ function startAuth() {
       return;
     }
     S.uid = user.uid;
-    if (await isHost()) startHost(); else { S.auth = 'key'; draw(); }
+    if (S.auth !== 'ready') startHost();
   });
-}
-
-async function submitKey(key) {
-  if (!key) return;
-  S.busy = true; S.authError = ''; draw();
-  // 콘솔에서 숫자만 입력하면 문자열이 아니라 숫자로 저장된다. 규칙의 ===는 타입까지 보므로 둘 다 시도한다.
-  const candidates = /^\d+$/.test(key) ? [key, Number(key)] : [key];
-  let res;
-  for (const k of candidates) {
-    // /hosts는 본인도 읽을 수 없어 재조회 대신 state 읽기로 확인한다.
-    res = await safeWrite(`hosts/${S.uid}`, k, { verify: false });
-    if (res.ok || res.error !== 'PERMISSION_DENIED') break;
-  }
-  S.busy = false;
-  if (res.ok && await isHost()) { startHost(); return; }
-  S.authError = res.error === 'PERMISSION_DENIED' || res.ok
-    ? '암호가 맞지 않습니다. (콘솔의 bmequiz/config/hostKey 값과 같아야 합니다)'
-    : '연결이 불안정합니다. 다시 시도해 주세요.';
-  draw();
 }
 
 function startHost() {
@@ -313,18 +291,8 @@ function chip(t, cls, mark) {
 }
 
 function viewLogin() {
-  if (S.auth === 'loading') return h('div', { class: 'login' }, h('p', null, '연결 중…'));
   if (S.auth === 'error') return h('div', { class: 'login' }, h('p', { class: 'err' }, S.authError));
-  const input = h('input', {
-    id: 'key', type: 'password', placeholder: '진행자 암호', autocomplete: 'off', disabled: S.busy,
-    onkeydown: e => { if (e.key === 'Enter') submitKey(e.target.value); }
-  });
-  return h('div', { class: 'login' },
-    h('h2', null, '진행자 입장'),
-    input,
-    S.authError && h('p', { class: 'err' }, S.authError),
-    h('button', { class: 'primary', disabled: S.busy, onclick: () => submitKey(input.value) },
-      S.busy ? '확인 중…' : '입장'));
+  return h('div', { class: 'login' }, h('p', null, '연결 중…'));
 }
 
 function viewLobby() {
@@ -539,7 +507,6 @@ function render() {
   if (!configured && !LOCAL && !DEMO) { root.replaceChildren(h('div', { class: 'login' }, h('p', { class: 'err' }, '설정이 비어 있습니다 (js/config.js)'))); return; }
   if (S.auth !== 'ready') {
     root.replaceChildren(viewLogin());
-    document.getElementById('key')?.focus();
     return;
   }
   if (!ready) { root.replaceChildren(h('div', { class: 'login' }, h('p', null, '불러오는 중…'))); return; }

@@ -23,11 +23,11 @@ export const EVENT = {
 // 비어 있으면: localhost에서는 "로컬 테스트 모드"(같은 브라우저 탭끼리만 연결), 배포 주소에서는 설정 오류 안내.
 // ─────────────────────────────────────────────────────────────
 export const FIREBASE = {
-  apiKey: '',
-  authDomain: '',
-  databaseURL: '',
-  projectId: '',
-  appId: ''
+  apiKey: 'AIzaSyD4lQNSOy-J5oCy0eitieueePLhoPjkM7c',
+  authDomain: 'bme-daa9b.firebaseapp.com',
+  databaseURL: 'https://bme-daa9b-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'bme-daa9b',
+  appId: '1:376730634561:web:abd6157cd3a216eb7779c0'
 };
 
 // 기존 Firebase 프로젝트를 재사용할 때 다른 데이터와 섞이지 않게 이 경로 아래에만 쓴다.
