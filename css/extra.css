@@ -87,12 +87,10 @@ button.tcard{color:inherit;white-space:normal}
 .badge.pos{opacity:.7}
 .badge.bonus{background:var(--yellow);color:#2c2c2a}
 
-/* 하단 창 제목 · 질문 카드(정답 공개 전 질문 / 함께 이야기) */
+/* 하단 창 제목 · 질문 카드(정답 공개 전 질문) */
 .answerbox .sheettitle{font-size:.62em;font-weight:800;color:var(--yellow);letter-spacing:.08em;margin-bottom:.5em}
 .answerbox.talk .talkq{font-weight:800;line-height:1.4;word-break:keep-all;text-wrap:balance}
 .answerbox.talk .talkq+.talkq{margin-top:.5em}
-.answerbox.talk .bridge{margin-top:.8em;font-size:.82em;font-weight:600;color:var(--ink2);word-break:keep-all}
-.answerbox.talk .bridge::before{content:'🎤 '}
 
 /* 마지막 문항 뒤 마무리 문구 */
 .closing{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:clamp(16px,3vh,40px);padding:0 4vw}

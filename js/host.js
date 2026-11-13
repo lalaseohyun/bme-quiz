@@ -38,12 +38,11 @@ const S = {
   // 아래는 진행자 화면에만 있는 로컬 상태. 백엔드에 올리지 않는다.
   showPreTalk: false,       // 정답 공개 전 질문 카드 (preTalk가 있는 문항만)
   showExplain: false,       // 해설 창
-  showTalk: false,          // 함께 이야기 (talk · bridge)
   showClosing: false,       // 마지막 문항 뒤 closing 문구
   hideCtl: false,
   admin: false
 };
-const clearLocal = () => Object.assign(S, { showPreTalk: false, showExplain: false, showTalk: false, showClosing: false });
+const clearLocal = () => Object.assign(S, { showPreTalk: false, showExplain: false, showClosing: false });
 
 // host.html?demo — 백엔드에 아무것도 쓰지 않고 화면 흐름과 크기만 점검한다.
 const DEMO = PARAMS.has('demo');
@@ -164,7 +163,6 @@ const actions = {
     if (s.phase === 'lobby') return;
     if (s.phase === 'final') return actions.goto(QUESTIONS.length - 1);
     if (S.showClosing) { S.showClosing = false; draw(); return; }
-    if (s.revealed && S.showTalk) { S.showTalk = false; draw(); return; }
     if (s.revealed && S.showExplain) { S.showExplain = false; draw(); return; }
     if (s.revealed) return commit({ ...s, revealed: false });
     if (S.showPreTalk) { S.showPreTalk = false; draw(); return; }
@@ -223,9 +221,8 @@ function primary() {
   }
   if (s.phase !== 'quiz' || !q) return null;
   if (s.revealed) {
-    // 해설·함께 이야기는 진행자 화면에서만 단계를 나눈다(로컬 상태).
+    // 해설은 진행자 화면에서만 단계를 나눈다(로컬 상태).
     if (!S.showExplain) return { label: '해설 보기', run: local('showExplain') };
-    if ((q.talk || q.bridge) && !S.showTalk) return { label: '함께 이야기', run: local('showTalk') };
     if (s.index < QUESTIONS.length - 1) return { label: '다음 문제', run: actions.next };
     if (q.closing && !S.showClosing) return { label: '마무리', run: local('showClosing') };
     return { label: EVENT.showRanking ? '최종 순위' : '퀴즈 종료', run: actions.final };
@@ -371,13 +368,9 @@ function viewQuestion() {
       h('div', { class: 'chips' }, TEAMS.map(t => choiceOf(t) === null ? chip(t, '') : chip(t, 'on', '✓'))));
   }
 
-  // 하단 창: 정답 공개 전 질문 → (공개) → 해설 → 함께 이야기. 나중 단계가 앞 단계를 대신한다.
+  // 하단 창: 정답 공개 전 질문 → (공개) → 해설
   let over = null;
-  if (s.revealed && S.showTalk) {
-    over = sheet('talk', '함께 이야기해요',
-      ...(q.talk || []).map(t => h('p', { class: 'talkq' }, t)),
-      q.bridge && h('p', { class: 'bridge' }, q.bridge));
-  } else if (s.revealed && S.showExplain) {
+  if (s.revealed && S.showExplain) {
     over = sheet('', null, paragraphs(explanationOf(q)));
   } else if (!s.revealed && S.showPreTalk && q.preTalk) {
     over = sheet('talk', '정답 공개 전에', ...q.preTalk.map(t => h('p', { class: 'talkq' }, t)));
