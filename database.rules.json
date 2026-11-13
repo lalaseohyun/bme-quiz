@@ -1,0 +1,48 @@
+{
+  "rules": {
+    "bmequiz": {
+      "config": { ".read": false, ".write": false },
+      "hosts": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && (!newData.exists() || (root.child('bmequiz/config/hostKey').exists() && newData.val() === root.child('bmequiz/config/hostKey').val()))"
+        }
+      },
+      "quiz": {
+        "state": {
+          ".read": "auth != null && root.child('bmequiz/config/hostKey').exists() && root.child('bmequiz/hosts').child(auth.uid).val() === root.child('bmequiz/config/hostKey').val()",
+          ".write": "auth != null && root.child('bmequiz/config/hostKey').exists() && root.child('bmequiz/hosts').child(auth.uid).val() === root.child('bmequiz/config/hostKey').val()"
+        },
+        "live": {
+          ".read": true,
+          ".write": "auth != null && root.child('bmequiz/config/hostKey').exists() && root.child('bmequiz/hosts').child(auth.uid).val() === root.child('bmequiz/config/hostKey').val()"
+        },
+        "answers": {
+          ".read": true,
+          ".write": "auth != null && root.child('bmequiz/config/hostKey').exists() && root.child('bmequiz/hosts').child(auth.uid).val() === root.child('bmequiz/config/hostKey').val()",
+          "$qid": {
+            "$team": {
+              ".write": true,
+              ".validate": "newData.hasChildren(['choice', 'ms'])"
+            }
+          }
+        }
+      },
+      "teams": { ".read": true, ".write": true },
+      "pins": {
+        ".read": "auth != null && root.child('bmequiz/config/hostKey').exists() && root.child('bmequiz/hosts').child(auth.uid).val() === root.child('bmequiz/config/hostKey').val()",
+        ".write": "auth != null && root.child('bmequiz/config/hostKey').exists() && root.child('bmequiz/hosts').child(auth.uid).val() === root.child('bmequiz/config/hostKey').val()",
+        "$team": {
+          ".write": "!data.exists()",
+          "$pin": {
+            ".read": true,
+            ".validate": "$pin.matches(/^[0-9]{4}$/)"
+          }
+        }
+      },
+      "session": {
+        ".read": true,
+        ".write": "auth != null && root.child('bmequiz/config/hostKey').exists() && root.child('bmequiz/hosts').child(auth.uid).val() === root.child('bmequiz/config/hostKey').val()"
+      }
+    }
+  }
+}

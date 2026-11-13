@@ -1,0 +1,39 @@
+/* ───────────────────────────────────────
+   색·폰트·간격 토큰 — 브랜드가 바뀌면 이 파일만 고치면 된다.
+   정읍 프로젝트(라인교육연구소 브랜드)와 동일한 팔레트를 그대로 사용.
+   ─────────────────────────────────────── */
+:root{
+  /* 배경 */
+  --bg:#2c2c2a;         /* 다크 베이스 */
+  --panel:#3a3a38;      /* 카드·패널 */
+  --panel2:#454541;     /* 카드 위 강조 요소 */
+
+  /* 글자 */
+  --ink:#fdf2dc;        /* 본문 */
+  --ink2:#a9a7a0;       /* 보조 */
+  --ink3:#7c7a73;       /* 흐림 */
+
+  /* 시그니처 — 작은 면적에만 (버튼·접속표시·정답카드) */
+  --yellow:#fdce0f;
+  --deep:#8a7320;
+
+  /* 넓은 면 — 순수 옐로우 대신 크림 (배지·1위 카드 등) */
+  --cream:#fdf2dc;
+  --fill:#fdf2dc;
+  --fillInk:#2c2c2a;
+
+  /* 해설·설명 카드 — 정답 색과 분리해 가독성 확보 */
+  --beige:#ececec;
+  --beigeInk:#3a3a38;
+
+  /* 오답/경고 */
+  --no:#e8705f;
+
+  /* 라인 */
+  --line:rgba(253,242,220,.14);
+  --line2:rgba(253,242,220,.07);
+
+  /* 폰트 — SB어그로/KoPubWorld돋움 CDN 확보 전까지 Pretendard로 대체 */
+  --font-title:'Pretendard Variable',Pretendard,'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;
+  --font-body:'Pretendard Variable',Pretendard,'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;
+}

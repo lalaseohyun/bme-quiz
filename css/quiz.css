@@ -1,0 +1,248 @@
+/* ───────────────────────────────────────
+   2. 청년정책 퀴즈 — 화면 스타일 (진행자 + 팀 공용 클래스)
+
+   고칠 때 ─ 문항·정답·해설      → content/02-quiz.json
+             진행 흐름·버튼      → js/host/sessions/quiz.js / js/team/sessions/quiz.js
+             색                  → css/tokens.css
+   참고 ─ 보기 개수가 문항마다 다르다(OX 2개 / 객관식 4개).
+          .choices에 style="--n:2"(또는 4)를 인라인으로 줘서 그리드 열 수를 맞춘다.
+          팀은 6개 고정 → .chips는 6열 1줄.
+          .qview는 문제 화면의 단계별 노출(문제→보기→제출현황) 감싸개.
+   ─────────────────────────────────────── */
+
+/* 문제 화면 — 문제만/문제+보기/전체 3단계로 노출된다(js/host/sessions/quiz.js의 stage).
+   ⚠ 세로 가운데 정렬을 하면 안 된다 — 단계를 넘길 때마다 문제가 위아래로 움직여서
+   보는 사람의 시선이 흐트러진다(2026-09-08 요청). 항상 위에 붙여 놓고, 배지·문제·보기의
+   간격과 크기를 세 단계 모두 똑같이 줘서 문제 위치가 한 번도 안 움직이게 한다.
+   그래서 아래 여백 값들은 셋 중 가장 빡빡한 "제출현황" 단계 기준으로 잡혀 있다. */
+/* --qs(문제 글자) · --cs(보기 칸)는 "화면에 안 들어갈 때만" 줄이는 축소 비율이다.
+   기본은 1(=CSS에 적힌 크기 그대로). 문항이 길거나 노트북처럼 세로가 짧은 화면에서
+   페이지 점·조 원이 아래로 밀려 잘리면, js/host/sessions/quiz.js의 fitQuestion()이
+   딱 들어갈 때까지 이 두 값만 조금씩 낮춘다 — 짧은 문제는 손대지 않아 그대로 크다. */
+.qview{flex:1;min-height:0;display:flex;flex-direction:column;--qs:1;--cs:1}
+
+/* 배지 */
+.badges{display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:clamp(8px,1.2vh,16px);flex-wrap:wrap;flex:0 0 auto}
+
+
+/* 문제 — 여기도 화면 전체 확대를 그대로 곱하면(63~149px) 문제 2줄 + 보기 4개 조합에서
+   페이지 점(.pagedots)이 화면 아래로 밀려 안 보였다(2026-09-08 실측) — 조금만 덜 키움 */
+.q{font-size:calc(clamp(42px,6.1vw,116px) * var(--qs,1));font-weight:800;line-height:1.3;letter-spacing:-.038em;
+  text-align:center;margin-bottom:clamp(16px,2.2vh,32px);flex:0 0 auto}
+
+/* 보기 — 개수(--n)에 따라 가로 등분. 기본 3, OX는 2, 4지선다는 4 */
+.choices{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:clamp(18px,2.3vw,44px);flex:0 0 auto}
+.ch{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:calc(clamp(6px,1vh,12px) * var(--cs,1));
+  background:var(--panel);border:2px solid transparent;border-radius:22px;
+  padding:calc(clamp(14px,2.2vh,32px) * var(--cs,1)) clamp(14px,1.4vw,26px);text-align:center;transition:.25s}
+.ch .n{width:calc(clamp(58px,4.7vw,90px) * var(--cs,1));height:calc(clamp(58px,4.7vw,90px) * var(--cs,1));
+  border-radius:50%;background:var(--panel2);
+  display:grid;place-items:center;font-weight:800;font-size:calc(clamp(27px,2.4vw,44px) * var(--cs,1));color:var(--ink2)}
+/* 보기 글자 — 이 이상 키우면 "약 6,700명" 같은 보기가 칸 안에서 두 줄로 꺾인다
+   (칸 폭 402px, 좌우 여백 뺀 글자 자리 ≈350px @1920, 2026-09-08 실측) */
+.ch .t{font-size:calc(clamp(31px,3.6vw,68px) * var(--cs,1));font-weight:700;letter-spacing:-.028em;line-height:1.24}
+/* 보기 부연설명 — 목업에서 지정한 부드러운 노랑(#F6D049), 본문의 0.7배 */
+.ch .t .sub{font-size:.7em;font-weight:700;color:#F6D049}
+.ch .tally{font-size:clamp(27px,2.44vw,41px);font-weight:700;color:var(--ink3);font-variant-numeric:tabular-nums}
+/* 정답 공개 — 정답 카드 안에 핵심 수치를 바로 붙인다(오른쪽 answer 카드를 따로 안 둔다).
+   목업 기준(1600px 폭): 25px · 빨강 #C60909 · 카드 폭 전체에 가운데 정렬 · 윗줄 구분선 */
+.ch .hl-inline{width:100%;font-size:clamp(30px,3.05vw,53px);font-weight:800;line-height:1.35;
+  color:#C60909;text-align:center;border-top:2px solid rgba(44,44,42,.22);padding-top:11px;margin-top:2px}
+
+/* OX 문항 — 번호를 빼고 O/X만 세 배 크기로 (기본 보기 글자의 3배) */
+.choices.ox .ch .n{display:none}
+.choices.ox .ch .t{font-size:calc(clamp(117px,15.79vw,284px) * var(--cs,1));line-height:1.05}
+.qview.revealed .choices.ox .ch .t{font-size:calc(clamp(90px,9.95vw,176px) * var(--cs,1))}
+
+/* 정답 공개 — 화면 구성은 그대로 두고 정답 보기만 노랗게(#F6D049) 바뀐다 */
+.ch.correct{background:#F6D049;border-color:#F6D049}
+.ch.correct .n{background:var(--fillInk);color:var(--fill)}
+.ch.correct .t,.ch.correct .tally{color:var(--fillInk)}
+.ch.correct .t .sub{color:var(--fillInk);opacity:.72}
+.ch.dimmed{opacity:.4}
+
+/* 정답 해설 — 보기 바로 아래 연회색 네모박스, 가운데 정렬, 문장마다 줄바꿈 */
+/* 해설 글자 — 예전엔 최대 65px까지 커서 짧은 해설에서 너무 크다는 지적(2026-09-08) —
+   한 단계 낮췄다. 그래도 긴 해설이 넘치면 fitInto('.answerbox', 18)가 이 크기부터
+   시작해서 18px까지 더 줄인다(js/host/sessions/quiz.js). */
+.answerbox{background:var(--beige);color:var(--beigeInk);border-radius:24px;
+  margin-top:clamp(14px,2.2vh,32px);padding:clamp(14px,2vh,28px) clamp(39px,4.68vw,86px);
+  font-size:clamp(26px,2.5vw,44px);line-height:1.45;font-weight:500;letter-spacing:-.02em;
+  text-align:center;flex:1 1 auto;min-height:0;overflow:auto;
+  display:flex;flex-direction:column;justify-content:center}
+.answerbox p+p{margin-top:clamp(3px,.6vh,9px)}
+.answerbox strong{color:#C60909}
+.answerbox .src{font-size:clamp(19px,1.7vw,28px);color:rgba(58,58,56,.5);margin-top:clamp(8px,1.2vh,16px);font-weight:600}
+
+/* 화면 맨 아래 묶음 — 제출현황(있을 때) + 남은 페이지 점.
+   정답 페이지에서는 해설 박스가 남는 자리를 다 쓰므로 auto 여백을 빼준다. */
+/* margin-top:auto 덕분에 이 묶음은 항상 화면 맨 아래에 붙는다 — 그래서 단계를 넘겨
+   제출현황이 새로 나타나도 페이지 점(.pagedots)은 제자리에 있고, 제출현황만 그 위로
+   끼어든다. 위쪽의 문제·보기는 전혀 안 움직인다. */
+.qbottom{margin-top:auto;flex:0 0 auto}
+.qview.revealed .qbottom{margin-top:0}
+/* 정답 페이지 — 이미 읽은 문제와 보기를 조금 줄여 해설 박스 자리를 만든다
+   (배치는 그대로, 크기만 한 단계 낮춘다). 여기서도 --qs/--cs를 곱해 두는 이유는,
+   해설이 긴 문항에서 해설 글자가 읽기 힘든 크기까지 쪼그라들지 않도록 fitQuestion()이
+   "이미 읽은 문제·보기"를 먼저 줄여 해설 자리를 만들어 주기 때문이다. */
+.qview.revealed .q{font-size:calc(clamp(41px,4.88vw,86px) * var(--qs,1));margin-bottom:clamp(12px,1.8vh,26px)}
+.qview.revealed .ch{padding:calc(clamp(10px,1.4vh,20px) * var(--cs,1)) clamp(24px,2.34vw,39px);
+  gap:calc(clamp(5px,.8vh,11px) * var(--cs,1));border-radius:18px}
+.qview.revealed .ch .n{width:calc(clamp(54px,4.1vw,74px) * var(--cs,1));height:calc(clamp(54px,4.1vw,74px) * var(--cs,1));
+  font-size:calc(clamp(27px,2.25vw,39px) * var(--cs,1))}
+.qview.revealed .ch .t{font-size:calc(clamp(24px,2.7vw,48px) * var(--cs,1))}
+.qview.revealed .ch .tally{font-size:calc(clamp(24px,2.06vw,35px) * var(--cs,1))}
+.qview.revealed .ch .hl-inline{font-size:calc(clamp(26px,2.54vw,45px) * var(--cs,1));padding-top:7px}
+
+/* 정답 공개 화면 하단 — 제출 현황 대신 "누가 맞혔는지"(조 원마다 O/X)를 보여준다.
+   너무 작다는 지적으로 한 단계 키웠다(2026-09-08) — 해설 박스(.answerbox)와 자리를
+   나눠 쓰므로, 2줄짜리 보기 문항처럼 자리가 빠듯하면 fitQuestion()이 --cs를 더
+   낮춰 여기·해설 둘 다 화면 안에 맞춘다(js/host/sessions/quiz.js). */
+.qview.revealed .foot{padding-top:calc(clamp(8px,1.1vh,18px) * var(--cs,1))}
+.qview.revealed .foot .tmeta{margin-bottom:calc(clamp(5px,.7vh,12px) * var(--cs,1))}
+.qview.revealed .foot .tstat{font-size:calc(clamp(23px,2.2vw,36px) * var(--cs,1))}
+.qview.revealed .foot .chips{gap:calc(clamp(7px,.9vh,14px) * var(--cs,1)) clamp(10px,1.1vw,19px);
+  margin-top:0}
+.qview.revealed .foot .chip{width:calc(clamp(90px,10vw,140px) * var(--cs,1));
+  font-size:calc(clamp(34px,3.6vw,56px) * var(--cs,1))}
+.qview.revealed .foot .chip .mk{font-size:.7em}
+
+/* 보기 아래 여백 + 제출 현황.
+   목업 프레임에는 하단 조작바가 없었지만 실제 화면에는 탭바+조작바(약 135px)가 더 있어서,
+   조 원이 가려지지 않도록 이 아래 여백과 조 원 크기를 목업보다 조금 줄여 잡았다. */
+.foot{padding-top:calc(clamp(12px,1.6vh,28px) * var(--cs,1));flex:0 0 auto}
+.tmeta{display:flex;justify-content:center}
+/* 제출 현황 — 화면 아래쪽에 너무 작게 나온다는 요청으로 약 2배로 키웠다(2026-09-08).
+   커진 만큼 세로를 더 먹으므로, 넘치는 화면에서는 fitQuestion()이 문제·보기를
+   조금 줄여 자리를 맞춘다(--qs/--cs, js/host/sessions/quiz.js). */
+.tstat{font-size:calc(clamp(40px,4.2vw,76px) * var(--cs,1));font-weight:700;color:var(--ink2)}
+.tstat b{color:var(--yellow)}
+.tstat.done{color:var(--yellow)}
+
+/* 팀 원 — 조 수(3~8)에 따라 개수가 달라진다. 예전엔 6칸 그리드라 조가 6보다
+   적으면 남은 칸이 비어 왼쪽으로 쏠려 보였다 — flex+가운데 정렬로 몇 개든 항상 중앙에 온다. */
+.chips{display:flex;flex-wrap:wrap;justify-content:center;
+  gap:calc(clamp(8px,1.2vh,18px) * var(--cs,1)) clamp(14px,1.6vw,26px);
+  max-width:min(100%,1120px);   /* 조 원을 2배로 키운 뒤에도 8조까지 한 줄에 들어가는 폭 */
+  margin:calc(clamp(8px,1vh,14px) * var(--cs,1)) auto 0;flex:0 0 auto}
+.chip{width:calc(clamp(80px,9.2vw,130px) * var(--cs,1));flex:0 0 auto;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;position:relative;
+  background:var(--panel);color:var(--ink3);
+  font-weight:800;font-size:calc(clamp(30px,3.2vw,54px) * var(--cs,1));letter-spacing:-.02em;transition:.2s}
+.chip.on{background:var(--yellow);color:#2c2c2a}
+.chip.done{background:var(--fill);color:var(--fillInk)}
+.chip.wrong{background:var(--panel2);color:var(--no);box-shadow:inset 0 0 0 3px var(--no)}
+/* 표식(✓ / O / X)은 조 원 글자에 비례해서 커지게 em으로 잡는다 — 원 크기를 바꿔도 같이 따라온다 */
+.chip .mk{position:absolute;top:2%;right:2%;width:30%;height:30%;
+  border-radius:50%;display:grid;place-items:center;font-size:.62em;font-weight:800;
+  background:var(--yellow);color:#2c2c2a;border:3px solid var(--bg)}
+.chip .mk.x{background:var(--no);color:#2c2c2a}
+.chip .mk.none{background:var(--panel2);color:var(--ink3)}
+
+/* ⚠ 대기화면(lobby) — 이 블록도 화면 전체 확대(1.3배→1.5배)를 그대로 곱해서 따라가다
+   h2 제목이 4줄로 꺾이고 화면 아래로 넘쳐버렸다(2026-09-08 실측, 팀 코드 QR을 보는
+   가장 중요한 화면이라 우선 고침). 원래 값(git 3163aa1) 기준으로 살짝만(1.1배 안팎)
+   키우는 걸로 다시 잡았다. .tcbtn은 애초에 무대 콘텐츠가 아니라 탭바 ☰ 드롭다운
+   버튼(js/host/main.js)이라 원래 크기로 완전히 되돌린다. */
+/* QR은 오늘 밤 모든 조가 제일 먼저 보는 화면이라 작으면 안 된다 — 넉넉하게 키움
+   (h2 텍스트를 이미 줄여놔서 세로 여유가 있다, 2026-09-08).
+   왼쪽 정렬(1fr로 오른쪽까지 쭉 늘이는 방식) 대신, QR+글자 묶음 전체를 화면
+   가운데쯤에 두 덩어리(auto auto)로 놓고 그 묶음 자체를 justify-content:center로
+   가운데 배치한다 — 글자 한 줄 한 줄은 여전히 왼쪽 정렬이라 "가운데 정렬"은 아니고,
+   화면 전체로 보면 QR·글자 묶음이 좌우 여백을 고르게 두고 화면을 꽉 채운다. */
+.lobby{display:grid;grid-template-columns:auto auto;gap:clamp(40px,4.6vw,90px);
+  align-items:center;justify-content:center;flex:1;min-height:0;
+  padding:0 clamp(30px,4vw,70px)}
+.qrbox{background:#fff;border-radius:24px;padding:clamp(18px,1.8vw,28px);line-height:0}
+/* 상한(세 번째 값)을 넉넉히 열어둔다 — 모니터가 넓을수록 clamp 상한에 먼저 걸려서
+   내용만 그대로고 좌우 빈 공간만 늘어나 "작아 보이는" 문제가 있었다(2026-09-08). */
+.qrbox img{width:clamp(300px,28vw,620px);display:block}
+.lobby h2{font-size:clamp(36px,4.6vw,110px);font-weight:800;letter-spacing:-.04em;line-height:1.22;margin-bottom:clamp(14px,2.2vh,30px)}
+.lobby h2 span{color:var(--yellow)}
+.lsub{font-size:clamp(21px,2.4vw,52px);color:var(--ink2);font-weight:600;margin-bottom:clamp(8px,1.2vh,16px)}
+.lsub b{color:var(--yellow)}
+/* 대기화면 — 오늘 진행할 조 수 고르기 */
+/* 조 수 버튼(.tcbtn) — 탭바 ☰ 메뉴(js/host/main.js)가 쓰는 전역 클래스라 여기 남겨 둔다.
+   무대(빔프로젝터 본문)가 아니라 진행자 조작용 작은 드롭다운이라 원래 크기 그대로. */
+.tcbtn{background:var(--panel);color:var(--ink2);font-weight:800;border:none;border-radius:12px;
+  padding:8px 16px;font-size:clamp(15px,1.3vw,22px);cursor:pointer;transition:.15s}
+.tcbtn:hover{background:var(--panel2)}
+.tcbtn.on{background:var(--yellow);color:#2c2c2a}
+
+/* 대기화면의 조 원은 줄바꿈 없이 가로 한 줄로 쭉(요청, 2026-09-08) — 그래서
+   max-width 제한을 없애고 flex-wrap:nowrap. 대신 조가 최대 8개일 때도 한 줄이
+   제목 폭(≈850px @1920)을 넘지 않도록 원 크기 상한을 94px로 잡았다
+   (8개 × 94px + 간격 7 × 13px ≈ 843px). 이 폭을 넘기면 조 원이 오른쪽 글자 칸을
+   더 넓게 밀어내서 제목이 다시 3줄로 꺾인다. */
+.lobby .chips{margin:clamp(12px,2vh,24px) 0 0;max-width:none;flex-wrap:nowrap;
+  justify-content:flex-start;gap:clamp(8px,.8vw,13px)}
+.lobby .chip{width:clamp(48px,5.6vw,94px);font-size:clamp(22px,2vw,40px)}
+
+/* 최종 순위 — 제목은 문제 제목과 같은 톤, 칸은 참여 조 수에 맞춰 늘어난다(--cols/--rows) */
+.finaltitle{font-size:clamp(63px,8.58vw,149px);font-weight:800;line-height:1.3;letter-spacing:-.038em;
+  text-align:center;color:var(--ink);margin-bottom:clamp(20px,3.4vh,48px);flex:0 0 auto}
+.rank{flex:1;min-height:0;display:grid;
+  grid-template-columns:repeat(var(--cols,2),1fr);
+  grid-template-rows:repeat(var(--rows,3),1fr);
+  gap:clamp(8px,1.4vh,20px) clamp(39px,5.46vw,98px);overflow:auto}
+.row{display:flex;align-items:center;gap:clamp(24px,2.54vw,44px);padding:clamp(14px,2.2vh,36px) clamp(32px,3.32vw,59px);
+  background:var(--panel);border-radius:18px}
+.row .r{flex:0 0 auto;min-width:clamp(110px,8.97vw,161px);font-size:clamp(44px,4.29vw,74px);font-weight:800;color:var(--ink3);letter-spacing:-.03em}
+.row .tm{font-size:clamp(47px,4.68vw,83px);font-weight:800;white-space:nowrap;flex:1}
+.row .sc{font-size:clamp(71px,7.22vw,129px);font-weight:800;color:var(--yellow);font-variant-numeric:tabular-nums;line-height:1}
+.row .sc small{font-size:.42em;color:var(--ink3);font-weight:600}
+.row.p1{background:var(--fill)}
+.row.p1 .r,.row.p1 .sc,.row.p1 .tm{color:var(--fillInk)}
+.row.p2,.row.p3{background:var(--panel2)}
+.row.p2 .r,.row.p3 .r{color:var(--cream)}
+
+/* ── 팀(모바일) 전용 ── */
+/* 문제 문구·보기 글자는 빔프로젝터 화면에서 읽는다 — 손에 든 화면은 문제 번호만
+   큼직하게 눌러 제출하는 키패드다(2026-09-08 요청, 예전엔 .tq에 문제 문구도 같이
+   보여줬었다). */
+/* 제출한 뒤 · 마감된 뒤 "기다려주세요" 안내 */
+.waitbox{background:var(--panel);border-radius:20px;padding:26px 18px;text-align:center;margin-bottom:18px}
+.waitbox.slim{padding:18px 16px}
+.waitbox .pulse{width:34px;height:34px;border-width:3px;margin:0 auto 12px}
+.waitbox.slim .pulse{width:26px;height:26px;margin-bottom:9px}
+.waitbox .wt{font-size:18px;font-weight:800;color:var(--fill);letter-spacing:-.02em}
+.waitbox.slim .wt{font-size:16px}
+.waitbox .ws{font-size:14px;font-weight:600;color:var(--ink2);line-height:1.5;margin-top:7px}
+
+/* 보기 번호 키패드 — 2열 고정(4지선다는 2×2, OX는 1행 2칸)으로 항상 큼직하게 누른다 */
+.opts{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.opt{display:flex;align-items:center;justify-content:center;background:var(--panel);
+  border:2px solid transparent;border-radius:22px;aspect-ratio:1.35;cursor:pointer;
+  transition:.15s;color:inherit;font:inherit}
+.opt:active{transform:scale(.98)}
+.opt .n{font-weight:800;font-size:clamp(30px,10vw,48px);color:var(--ink2);letter-spacing:-.02em}
+.opt.sel{background:rgba(253,206,15,.16);border-color:var(--yellow)}
+.opt.sel .n{color:var(--fill)}
+
+.status{margin-top:20px;padding:16px 18px;border-radius:16px;font-size:15.5px;font-weight:600;text-align:center;
+  background:var(--panel);color:var(--ink2)}
+.status.ok{background:rgba(253,242,220,.14);color:var(--fill);font-weight:700}
+
+.verdict{text-align:center;padding:30px 16px 26px}
+.verdict .mk{width:96px;height:96px;margin:0 auto;border-radius:50%;display:grid;place-items:center;
+  font-size:52px;font-weight:700;background:var(--panel);color:var(--ink3)}
+.verdict.ok .mk{background:var(--fill);color:var(--fillInk)}
+.verdict.no .mk{background:rgba(232,112,95,.16);color:var(--no)}
+.verdict .lb{font-size:21px;font-weight:700;margin-top:16px}
+.verdict .an{font-size:16px;color:var(--ink2);font-weight:600;margin-top:10px}
+.card{background:var(--panel);border-radius:20px;padding:20px;margin-top:16px}
+.card.hl{background:rgba(253,206,15,.16)}
+.card .lb{font-size:11.5px;font-weight:700;color:var(--yellow);letter-spacing:.18em;margin-bottom:9px}
+.card .v{font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.3;color:var(--fill)}
+.card p{font-size:16px;line-height:1.68;color:var(--ink);font-weight:400}
+.card p+p{margin-top:8px}
+.card strong{color:var(--yellow)}
+.card .src{font-size:12px;color:var(--ink3);margin-top:12px;font-weight:500}
+
+.scorebar{display:flex;gap:12px;margin-top:16px}
+.sb{flex:1;background:var(--panel);border-radius:18px;padding:16px;text-align:center}
+.sb .k{font-size:12px;color:var(--ink3);font-weight:600}
+.sb .v{font-size:29px;font-weight:700;color:var(--fill);letter-spacing:-.03em;margin-top:3px}
+
+.medal{font-size:66px;line-height:1}
+.rankbig{font-size:62px;font-weight:700;color:var(--fill);letter-spacing:-.045em;line-height:1}

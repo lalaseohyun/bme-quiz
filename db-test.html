@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>db.js 쓰기·재조회 점검</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<style>
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { color: var(--ink2); margin: 0 0 16px; }
+  .status { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chip { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line);
+          background: var(--panel); font-size: 14px; }
+  .buttons { display: grid; gap: 8px; margin-bottom: 16px; }
+  button { padding: 12px 16px; border: 0; border-radius: 14px; font: inherit; text-align: left;
+           background: var(--yellow); color: #2c2c2a; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button small { display: block; opacity: .85; }
+  pre { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+        padding: 12px; font: 13px/1.6 ui-monospace,Consolas,monospace; white-space: pre-wrap; min-height: 200px; margin: 0; }
+  .ok { color: var(--yellow); } .fail { color: var(--no); } .info { color: var(--ink2); }
+</style>
+</head>
+<body>
+<main>
+  <h1>db.js 쓰기·재조회 점검</h1>
+  <p>행사 전 점검용 페이지. 배포 시 지워도 된다.</p>
+
+  <div class="status">
+    <span class="chip" id="conn">연결: 확인 중</span>
+    <span class="chip" id="queue">재전송 큐: 0</span>
+  </div>
+
+  <div class="buttons">
+    <button data-test="normal">1. 정상 쓰기 + 재조회
+      <small>/quiz/answers/_dbtest/1 에 쓰고 다시 읽어 값이 같은지 확인</small></button>
+    <button data-test="denied">2. 거부되는 쓰기
+      <small>비로그인으로 /quiz/state 에 쓰기 → PERMISSION_DENIED로 잡히고 큐에 안 들어가야 함</small></button>
+    <button data-test="offline">3. 오프라인 → 큐 → 복귀 재전송
+      <small>연결을 끊고 쓰기 → 큐 보관 → 연결 복구 → 자동 재전송 후 재조회</small></button>
+    <button data-test="cleanup">4. 테스트 데이터 지우기</button>
+  </div>
+
+  <pre id="log"></pre>
+</main>
+
+<script type="module">
+import {
+  configured, safeWrite, read, onConnection, onQueueChange, queueSize, clearQueue, setOffline, setOnline
+} from './js/db.js';
+
+const $ = id => document.getElementById(id);
+const log = (text, cls = 'info') => {
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = `${new Date().toLocaleTimeString()}  ${text}`;
+  $('log').append(line);
+};
+const check = (label, pass, detail) =>
+  log(`${pass ? '통과' : '실패'} — ${label}${detail ? ` (${detail})` : ''}`, pass ? 'ok' : 'fail');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const PATH = 'quiz/answers/_dbtest/1';
+
+const tests = {
+  async normal() {
+    const value = { choice: 2, ms: 1234, at: Date.now() };
+    const res = await safeWrite(PATH, value);
+    check('쓰기 후 재조회 값 일치', res.ok && res.verified, JSON.stringify(res));
+    log(`DB에 저장된 값: ${JSON.stringify(await read(PATH))}`);
+  },
+
+  async denied() {
+    const before = queueSize();
+    const res = await safeWrite('quiz/state', { phase: 'lobby' }, { queue: true });
+    check('거부가 실패로 잡힘', !res.ok && res.error === 'PERMISSION_DENIED', JSON.stringify(res));
+    check('거부된 쓰기는 큐에 안 들어감', queueSize() === before);
+  },
+
+  async offline() {
+    const value = { choice: 1, ms: 777, at: Date.now() };
+    setOffline();
+    log('연결을 끊었습니다. 쓰기 시도 중(3초 대기)…');
+    const res = await safeWrite(PATH, value, { queue: true, timeout: 3000 });
+    check('오프라인 쓰기가 실패로 잡히고 큐에 보관됨', !res.ok && res.queued && queueSize() > 0, JSON.stringify(res));
+    setOnline();
+    log('연결을 복구했습니다. 자동 재전송 대기 중…');
+    for (let i = 0; i < 20 && queueSize() > 0; i++) await sleep(500);
+    check('복귀 후 큐가 비워짐', queueSize() === 0);
+    const stored = await read(PATH);
+    check('재전송된 값이 DB에 있음', stored?.at === value.at, JSON.stringify(stored));
+  },
+
+  async cleanup() {
+    const res = await safeWrite('quiz/answers/_dbtest/1', null);
+    clearQueue();
+    check('테스트 데이터 삭제', res.ok, JSON.stringify(res));
+  }
+};
+
+if (!configured) {
+  log('js/config.js의 FIREBASE 설정값이 아직 자리표시(YOUR_…)입니다. 값을 넣은 뒤 새로고침하세요.', 'fail');
+  $('conn').textContent = '연결: 설정 없음';
+  document.querySelectorAll('button').forEach(b => { b.disabled = true; });
+} else {
+  onConnection(c => { $('conn').textContent = `연결: ${c ? '온라인' : '오프라인'}`; });
+  onQueueChange(n => { $('queue').textContent = `재전송 큐: ${n}`; });
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      document.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      try { await tests[btn.dataset.test](); }
+      catch (e) { log(`예외: ${e.message}`, 'fail'); }
+      finally { document.querySelectorAll('button').forEach(b => { b.disabled = false; }); }
+    });
+  });
+  log('준비됨. 1 → 2 → 3 순서로 눌러 보세요.');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+/* ───────────────────────────────────────
+   진행자(빔프로젝터) 셸 — 조작바 · 탭바 · 무대모드.
+   세션 안쪽 화면(문제·차트·갤러리 등) 스타일은 css/sessions/*.css에 있다.
+   여기서는 "셸"만 — main 영역을 감싸는 틀과 하단 바.
+   ─────────────────────────────────────── */
+body{display:flex;flex-direction:column;overflow:hidden}
+
+/* 위쪽 여백은 아래보다 넉넉하게 — 제목·문제가 화면 맨 위에 붙어 보이지 않게 한다
+   (2026-09-08 요청으로 조금 더 키움). 너무 키우면 내용이 들어갈 세로 공간이 줄어
+   문제+보기가 많은 화면에서 잘리니, 아주 조금씩만 올릴 것. */
+main{flex:1;min-height:0;padding:clamp(58px,9.2vh,146px) clamp(28px,4.5vw,90px) clamp(24px,3.6vh,54px);
+  display:flex;flex-direction:column;overflow:hidden}
+
+/* 하단 탭바 — 세션 순서와 무관하게 언제든 이동 */
+.tabbar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:10px 22px;
+  border-top:1px solid var(--line2);background:#252523}
+.tabbar button{background:transparent;color:var(--ink3);font-weight:700}
+.tabbar button.active{background:var(--panel);color:var(--yellow)}
+.tabbar .sp{flex:1}
+/* 배포 표식 — 캐시된 옛 화면을 보고 있는지 확인용(js/host/main.js의 BUILD) */
+.tabbar .build{font-size:11px;font-weight:700;color:var(--ink3);opacity:.55;letter-spacing:.06em}
+
+/* 오늘 진행할 조 수 ☰ 메뉴 — 빔프로젝터 화면(=이 탭바)에 큰 버튼을 안 두려고
+   여기 눌러야만 열리는 작은 패널에 넣었다(js/host/main.js renderTeamsMenu/toggleTeamsMenu) */
+.teammenu{position:relative}
+.tabbar #bTeams.active{background:var(--panel);color:var(--yellow)}
+.teammenu-panel{position:absolute;bottom:calc(100% + 10px);right:0;background:var(--panel);
+  border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  display:none;z-index:50;white-space:nowrap}
+.teammenu-panel.open{display:block}
+.teammenu-panel .httl{font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:10px;letter-spacing:.04em}
+.teammenu-panel .htbtns{display:flex;gap:8px}
+
+/* 하단 조작바 — 세션이 controls()로 준 버튼을 여기 그린다 */
+.ctl{flex:0 0 auto;padding:12px 22px;border-top:1px solid var(--line2);background:#252523}
+.ctl.hidden{display:none}
+.row1,.row2{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.row2{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)}
+.ctl.more .row2{display:flex}
+.ctl .sp{flex:1}
+.pill{font-size:13.5px;font-weight:600;color:var(--ink2);background:var(--panel);padding:8px 15px;border-radius:999px;white-space:nowrap}
+.pill b{color:var(--yellow);font-weight:800}
+.hint{font-size:12.5px;color:var(--ink3);font-weight:500}
+
+/* 무대 모드 — 네이티브 Fullscreen API 보조용 CSS 클래스.
+   탭바·조작바는 전체화면 중에도(ESC로 브라우저 전체화면만 빠져나온 경우 포함)
+   항상 보이게 둔다 — 진행 중 언제든 다른 세션으로 넘어갈 수 있어야 하기 때문. */
+body.fs main{padding-top:clamp(60px,9vh,140px)}

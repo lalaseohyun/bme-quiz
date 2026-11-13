@@ -1,0 +1,43 @@
+/* ───────────────────────────────────────
+   리셋 · 공통 버튼·배지 — 모든 화면(host/team) 공용.
+   세션 하나만의 모양을 바꾸고 싶다면 css/sessions/*.css를 고칠 것.
+   ─────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+.esc-safe{white-space:pre-wrap}
+
+button{font:inherit;font-weight:600;font-size:15px;border-radius:11px;border:none;
+  background:var(--panel);color:var(--ink);padding:12px 18px;cursor:pointer;
+  transition:.15s;white-space:nowrap}
+button:hover{background:var(--panel2)}
+button:disabled{opacity:.35;cursor:not-allowed}
+button.primary{background:var(--yellow);color:#2c2c2a;font-weight:800;font-size:17px;padding:13px 32px}
+button.primary:hover{background:#ffd93a}
+button.primary.ready{animation:ready 1.3s ease-in-out infinite}
+@keyframes ready{50%{opacity:.55}}
+button.ghost{background:transparent;color:var(--ink2)}
+button.danger{background:transparent;color:var(--no)}
+
+.badge{font-size:13px;font-weight:600;padding:8px 20px;border-radius:999px;background:var(--panel);color:var(--ink2)}
+.badge.num{background:var(--fill);color:var(--fillInk);font-weight:800}
+
+.dot{width:8px;height:8px;border-radius:50%;background:var(--no);display:inline-block}
+.dot.live{background:var(--yellow)}
+
+/* 화살표로 넘기는 화면 공통 — 남은 페이지 수를 노란 동그라미로 보여준다.
+   지금 페이지가 크고 밝다. (퀴즈·오프닝·토크콘서트·원탁토론이 함께 쓴다) */
+.pagedots{display:flex;gap:clamp(8px,.8vw,14px);justify-content:center;align-items:center;
+  padding-top:clamp(12px,1.8vh,26px);flex:0 0 auto}
+.pagedots i{width:clamp(9px,.75vw,14px);height:clamp(9px,.75vw,14px);border-radius:50%;
+  background:rgba(253,206,15,.22);display:block;transition:.2s}
+.pagedots i.on{background:var(--yellow);transform:scale(1.35)}
+
+/* 연결 끊김 — 화면 어디서나(무대모드 중에도) 보이는 위치 */
+#alert{position:fixed;top:18px;right:22px;z-index:30;display:none;
+  background:var(--no);color:#2c2c2a;padding:10px 20px;border-radius:999px;font-size:15px;font-weight:800}
+body.offline #alert{display:block}
