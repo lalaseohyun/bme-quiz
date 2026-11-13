@@ -84,12 +84,21 @@ function startAuth() {
   });
 }
 
+// 새로고침 직후에는 저장된 익명 로그인이 먼저 살아나고, DB 연결에 로그인 토큰이 붙기 전에 구독이 나갈 수 있다.
+// 그러면 로그인 필요 경로(quiz/state 등) 구독이 거부되고 끝나 "불러오는 중…"에 멈춘다. 거부되면 잠시 뒤 다시 구독한다.
+function watchRetry(path, cb, tries = 0) {
+  watch(path, cb, e => {
+    console.warn(`[host] ${path} 구독 거부 — 다시 시도 (${tries + 1})`, e?.code || e);
+    setTimeout(() => watchRetry(path, cb, tries + 1), Math.min(500 * (tries + 1), 4000));
+  });
+}
+
 function startHost() {
   S.auth = 'ready';
-  watch('quiz/state', v => { S.state = v; draw(); });
-  watch('quiz/answers', v => { S.answers = v; draw(); });
-  watch('teams', v => { S.teams = v; draw(); });
-  watch('pins', v => { S.pins = v; draw(); });
+  watchRetry('quiz/state', v => { S.state = v; draw(); });
+  watchRetry('quiz/answers', v => { S.answers = v; draw(); });
+  watchRetry('teams', v => { S.teams = v; draw(); });
+  watchRetry('pins', v => { S.pins = v; draw(); });
   onConnection(c => { S.online = c; draw(); });
   draw();
 }
